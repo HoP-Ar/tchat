@@ -1,5 +1,15 @@
 #include "chat.hpp"
+#include <boost/thread.hpp>
+#include <iostream>
+#include <stdlib.h>
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+static std::string cgroup_mode = "";
+static std::string c1x1_mode = "";
+static std::string server_mode = "";
+static std::string s1x1_mode = "";
+static std::string version = "";
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 Chat::Chat(TCPBase* connection){
 	conn = connection;
@@ -11,12 +21,13 @@ void Chat::start(){
 	
 	if(!conn->start())
 		return;
-	std::cout<<"started"<<std::endl;
+//	std::cout<<"started"<<std::endl; /////
 	ls = boost::thread(&Chat::listen, this);
 	while(conn->isConnected() && msg != "/exit"){
 		std::getline(std::cin, msg);
 		conn->send(msg);
 	}
+//	std::cout<<conn->isConnected()<<std::endl; /////
 }
 
 void Chat::start2(){

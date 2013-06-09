@@ -14,9 +14,10 @@ TCPBase::TCPBase(){}
 
 void TCPBase::setup(){
 	setPort();
+//	test(port);
 	timeleft.tv_sec = 1;
 	timeleft.tv_usec = 0;
-	inRun = true;
+	//inRun = true;
 	setAddr();
 }
 
@@ -84,12 +85,13 @@ bool TCPClient::start(){
 
 bool TCPClient::create(){
 	socFD = socket(AF_INET, SOCK_STREAM, 0);
-	//test(port);
+//	test(port);
 	if(socFD < 0) return false;
 	while(connect(socFD, (sockaddr*) &addr, sizeof(addr)) != 0){
 		sleep(1);
 	}
 	connSocFD = socFD;
+	inRun = true;
 	return true;
 }
 
@@ -121,6 +123,7 @@ bool TCPServer::create(){
 	if(bind(socFD, (sockaddr*) &addr, sizeof(addr)) < 0) return false;
 	if(listen(socFD, 5) < 0) return false;
 	set = true;
+	inRun = true;
 	return true;
 }
 
@@ -156,16 +159,17 @@ bool Client::start(){
 	send(type);
 	// step 3 <<
 	setupMsg = breceive();
-	test("| "+setupMsg+" |");
+//	test("| "+setupMsg+" |");
 	int touchPort = atoi(setupMsg.c_str());
 	if(touchPort == -1)
 		return false;
-	test(touchPort);
+//	test(touchPort);
 	addr.sin_port = htons(touchPort);
 	stop();
+	inRun = true;
 	if(!create()) return false;
 	// connected
-	test("haha");
+//	test("haha");
 	return true;
 }
 
@@ -352,7 +356,7 @@ void Server::takeClient(){
 			clientGroup = &groups[groups.size() - 1];
 		}
 		msg = clientGroup->creatSlot();
-		test("rM = " + msg);
+		//test("rM = " + msg);
 		send(msg);
 ////////// maybe need
 		close(connSocFD);					// maybe need
