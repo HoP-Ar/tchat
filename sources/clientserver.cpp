@@ -40,17 +40,23 @@ void TCPBase::setPort(){
 }
 
 bool TCPBase::send(std::string message){
+	if(message == "")
+		return false;
 	messg_len = write(connSocFD, message.c_str(), 1024);
 	if(messg_len < 0) return false;
 	return true;
 }
 
 std::string TCPBase::breceive(){
+	if(!isConnected()){
+		return "";
+	}
+//	test();
 	clearBuff();
 	messg_len = read(connSocFD, messg, 1024);
-	if(messg_len < 0){
+	if(messg_len <= 0){
 		stop();
-		return "-1";
+		return "";
 	}
 	return (std::string) messg;
 }
@@ -59,7 +65,7 @@ std::string TCPBase::receive(){
 	fd_set fd4read;
 	FD_ZERO(&fd4read);
 	FD_SET(connSocFD,&fd4read);
-	if(select(connSocFD + 1, &fd4read, NULL, NULL, &timeleft) <= 0) return "";
+	if(select(connSocFD + 1, &fd4read, NULL, NULL, &timeleft) <= 0 || !isConnected()) return "";
 	return breceive();
 }
 
@@ -136,6 +142,7 @@ void TCPServer::setAddr(){
 void TCPServer::takeClient(){
 	socklen_t some = sizeof(addr);
 	connSocFD = accept(socFD, (sockaddr*) &addr, &some);
+//	test(connSocFD);
 }
 
 //
@@ -195,8 +202,9 @@ void ClientListener::setFriendList(std::vector<ClientListener>* friendList){
 bool ClientListener::start(){
 	if(!create()) return false;
 	takeClient();
+//	test(connSocFD);
 	std::cout<<"One more client has been connected on "<<port<<" port."<<std::endl;
-	while(1){
+	while(isConnected()){
 		receive();
 	}
 	return true;
@@ -233,14 +241,17 @@ int ClientListener::getPort(){
 }
 
 int ClientListener::getID(){
+	//test(connSocFD);
 	return id;
 }
 
 void ClientListener::receive(){
 	std::string msg = breceive();
 	for(int i = 0; i < friends->size(); i++)
-		if(id != (*friends)[i].getID())
+		if(getID() != (*friends)[i].getID()){
+			//test((*friends)[i].getID());
 			(*friends)[i].send(msg);
+		}
 }
 
 //
@@ -271,7 +282,7 @@ std::string ClientGroup::creatSlot(){
 	ClientListener newOne(newID);
 	clients.push_back(newOne);
 	clients.back().setFriendList(&clients);
-	clients.back().setup();	 							//there is some problem.
+	clients.back().setup();
 	newThread = boost::thread(boost::bind(&ClientListener::start, clients.back()));
 	std::ostringstream newPort;
 	newPort<<clients.back().getPort();
