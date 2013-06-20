@@ -136,12 +136,17 @@ public:
 	friend class ClientGroup;
 protected:
 	int id;
+//	volatile int connSocFD;
+//	boost::mutex bMutex;
+//	boost::mutex bMutex;
 	std::vector<ClientListener>* friends;
 	
 	ClientListener(int clientID, std::vector<ClientListener>* friendList);
 	ClientListener(int clientID);
 	void setFriendList(std::vector<ClientListener>* friendList);	
 	bool start();
+//	bool send(std::string message);
+//	void takeClient();
 	void setPort();
 	int getPort();
 	int getID();
@@ -154,6 +159,7 @@ public:
 protected:
 	std::string type;
 	std::vector<ClientListener> clients;
+//	std::vector<volatile ClientListener> clients;
 	
 /////// Test /////////	
 	void test(){

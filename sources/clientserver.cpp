@@ -32,6 +32,7 @@ void TCPBase::stop(){
 }
 
 bool TCPBase::isConnected(){
+//	test(connSocFD);
 	return inRun;
 }
 
@@ -42,6 +43,7 @@ void TCPBase::setPort(){
 bool TCPBase::send(std::string message){
 	if(message == "")
 		return false;
+//	test(connSocFD);
 	messg_len = write(connSocFD, message.c_str(), 1024);
 	if(messg_len < 0) return false;
 	return true;
@@ -203,6 +205,7 @@ bool ClientListener::start(){
 	if(!create()) return false;
 	takeClient();
 //	test(connSocFD);
+//	send("hello");
 	std::cout<<"One more client has been connected on "<<port<<" port."<<std::endl;
 	while(isConnected()){
 		receive();
@@ -279,11 +282,11 @@ std::string ClientGroup::creatSlot(){
 	else{
 		newID = 0;
 	}
-	ClientListener newOne(newID);
+	ClientListener newOne(newID, &clients);
 	clients.push_back(newOne);
-	clients.back().setFriendList(&clients);
+//	clients.back().setFriendList(&clients);
 	clients.back().setup();
-	newThread = boost::thread(boost::bind(&ClientListener::start, clients.back()));
+	newThread = boost::thread(boost::bind(&ClientListener::start, &clients.back()));
 	std::ostringstream newPort;
 	newPort<<clients.back().getPort();
 	return newPort.str();
@@ -339,7 +342,6 @@ void Server::takeClient(){
 		// step 1 >>
 		if(mn >= slots){
 			send("Sorry. Server is full, please try later.");
-////////////// maybe need
 			close(connSocFD);				// maybe need
 			continue;
 		}
@@ -349,7 +351,6 @@ void Server::takeClient(){
 		// step 3 >>
 		if((type.c_str() != NULL)&&(clientType != type)){
 			send("-1");
-////////////// maybe need
 			close(connSocFD);				// maybe need
 			continue;
 		}
@@ -369,7 +370,6 @@ void Server::takeClient(){
 		msg = clientGroup->creatSlot();
 		//test("rM = " + msg);
 		send(msg);
-////////// maybe need
 		close(connSocFD);					// maybe need
 		// received
 	}
