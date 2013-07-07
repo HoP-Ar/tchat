@@ -30,18 +30,6 @@ void Chat::start(){
 //	std::cout<<conn->isConnected()<<std::endl; /////
 }
 
-void Chat::start2(){
-	std::string msg;
-	
-	conn->start();
-	std::cout<<"started.\n";
-	while(1){
-		std::cin>>msg;
-		conn->send(msg);
-		std::cout<<conn->breceive()<<std::endl;
-	}
-}
-
 void Chat::listen(){
 	std::string msg = "Connected.";
 	while(conn->isConnected() && msg != "/exit"){

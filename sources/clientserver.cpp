@@ -5,7 +5,7 @@
 //          Functional Description Of Classes 
 //
 ///////////////////////////////////////////////////////////////////////////
-
+boost::mutex cMutex;
 //
 //Class TCPBase
 //
@@ -32,7 +32,6 @@ void TCPBase::stop(){
 }
 
 bool TCPBase::isConnected(){
-//	test(connSocFD);
 	return inRun;
 }
 
@@ -204,13 +203,22 @@ void ClientListener::setFriendList(std::vector<ClientListener>* friendList){
 bool ClientListener::start(){
 	if(!create()) return false;
 	takeClient();
+	wasConnected = true;
 //	test(connSocFD);
 //	send("hello");
-	std::cout<<"One more client has been connected on "<<port<<" port."<<std::endl;
+	std::cout<<"[]<- One more client has been connected to "<<port<<" port."<<std::endl;
 	while(isConnected()){
 		receive();
 	}
 	return true;
+}
+
+bool ClientListener::disconnected(){
+	if(wasConnected)
+		return !isConnected();
+	else
+		return false;
+		
 }
 
 void ClientListener::setPort(){
@@ -250,11 +258,12 @@ int ClientListener::getID(){
 
 void ClientListener::receive(){
 	std::string msg = breceive();
-	for(int i = 0; i < friends->size(); i++)
-		if(getID() != (*friends)[i].getID()){
-			//test((*friends)[i].getID());
-			(*friends)[i].send(msg);
-		}
+	if(msg != "/exit")
+		for(int i = 0; i < friends->size(); i++)
+			if(getID() != (*friends)[i].getID()){
+				//test((*friends)[i].getID());
+				(*friends)[i].send(msg);
+			}
 }
 
 //
@@ -263,6 +272,26 @@ void ClientListener::receive(){
 
 ClientGroup::ClientGroup(std::string groupType){
 	type = groupType;
+//	boost::thread garbCThread;
+//	garbCThread = boost::thread(&ClientGroup::garbageCollector, this);    // needs to reference of this
+}
+
+void ClientGroup::garbageCollector(){
+	while(1){
+		sleep(1);
+//		test(clients.size());
+		for(int i = 0; i < clients.size(); i++){
+//			test(clients[i].isConnected());
+			if(clients[i].disconnected()){
+				boost::mutex::scoped_lock lockClients(cMutex);
+				int disPort = clients[i].getPort();
+				clients.erase(clients.begin() + i);
+				i--;
+				std::cout<<"[]-> One client has been disconnected from "<<disPort<<" port."<<std::endl;
+			}
+		}
+
+	}
 }
 
 int ClientGroup::getCount(){
@@ -342,7 +371,7 @@ void Server::takeClient(){
 		// step 1 >>
 		if(mn >= slots){
 			send("Sorry. Server is full, please try later.");
-			close(connSocFD);				// maybe need
+			//close(connSocFD);				// maybe need
 			continue;
 		}
 		send("OK");
@@ -351,7 +380,7 @@ void Server::takeClient(){
 		// step 3 >>
 		if((type.c_str() != NULL)&&(clientType != type)){
 			send("-1");
-			close(connSocFD);				// maybe need
+			//close(connSocFD);				// maybe need
 			continue;
 		}
 		notAssigned = true;
@@ -366,13 +395,18 @@ void Server::takeClient(){
 			ClientGroup newOne(clientType);
 			groups.push_back(newOne);
 			clientGroup = &groups[groups.size() - 1];
+			boost::thread garbCThread;
+			garbCThread = boost::thread(boost::bind(&ClientGroup::garbageCollector, clientGroup));
 		}
 		msg = clientGroup->creatSlot();
 		//test("rM = " + msg);
 		send(msg);
-		close(connSocFD);					// maybe need
+		//close(connSocFD);					// maybe need
 		// received
 	}
+}
+Server::~Server(){
+	std::cout<<"Server has stopped."<<std::endl;
 }
 //...
 /////////////////////////////////////// END OF FILE ////////////////////////////////////////

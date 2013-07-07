@@ -20,7 +20,8 @@
 #include <arpa/inet.h>
 //-----
 //-----
-#include <boost/thread.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
 //-----
 
 //---Final products:
@@ -57,6 +58,9 @@
 	  
 //////////////////////////////////////////////////////		
 
+//Globals
+//boost::mutex cMutex;
+/////////
 
 //Other components
 
@@ -136,15 +140,16 @@ public:
 	friend class ClientGroup;
 protected:
 	int id;
+	int wasConnected;
 //	volatile int connSocFD;
-//	boost::mutex bMutex;
-//	boost::mutex bMutex;
+//	boost::mutex cMutex;
 	std::vector<ClientListener>* friends;
 	
 	ClientListener(int clientID, std::vector<ClientListener>* friendList);
 	ClientListener(int clientID);
 	void setFriendList(std::vector<ClientListener>* friendList);	
 	bool start();
+	bool disconnected();
 //	bool send(std::string message);
 //	void takeClient();
 	void setPort();
@@ -159,6 +164,7 @@ public:
 protected:
 	std::string type;
 	std::vector<ClientListener> clients;
+//	boost::mutex cMutex;
 //	std::vector<volatile ClientListener> clients;
 	
 /////// Test /////////	
@@ -174,6 +180,7 @@ protected:
 	
 	ClientGroup(std::string groupType);
 	int getCount();
+	void garbageCollector();
 	std::string getType();
 	std::string creatSlot();
 };
@@ -185,6 +192,7 @@ public:
 	Server(int maxClients);
 	bool start();
 	void wait_to_end();
+	~Server();
 protected:
 	int slots;
 	std::vector<ClientGroup> groups;

@@ -5,21 +5,15 @@
 #ifndef CHAT_HPP
 #define CHAT_HPP
 
-#include <iostream>
 #include <string>
 #include <map>
 #include <vector>
 #include "clientserver.hpp"
-#include <stdlib.h>
-
-#include <boost/thread.hpp>
-
 
 class Chat{
 public:
 	Chat(TCPBase* connection);
 	void start();
-	void start2();
 private:
 	TCPBase* conn;
 	void listen();
