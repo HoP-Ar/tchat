@@ -1,5 +1,6 @@
 #include "chat.hpp"
-#include <boost/thread.hpp>
+//v0.1 #include <boost/thread.hpp>
+#include <pthread.h>
 #include <iostream>
 #include <stdlib.h>
 
@@ -11,18 +12,24 @@ static std::string s1x1_mode = "";
 static std::string version = "";
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+void* chat_listen_thread(void* null){
+	((Chat*) null)->listen();
+}
+
 Chat::Chat(TCPBase* connection){
 	conn = connection;
 }
 
 void Chat::start(){
-	boost::thread ls;
+	//v0.1 boost::thread ls;
+	pthread_t ls;
 	std::string msg;
 	
 	if(!conn->start())
 		return;
 //	std::cout<<"started"<<std::endl; /////
-	ls = boost::thread(&Chat::listen, this);
+	//v0.1 ls = boost::thread(&Chat::listen, this);
+	pthread_create(&ls, NULL, &chat_listen_thread, this);
 	while(conn->isConnected() && msg != "/exit"){
 		std::getline(std::cin, msg);
 		conn->send(msg);

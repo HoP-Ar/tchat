@@ -10,8 +10,12 @@
 #include <vector>
 #include "clientserver.hpp"
 
+void* chat_listen_thread(void* null);
+
 class Chat{
 public:
+	friend void* chat_listen_thread(void* null);
+
 	Chat(TCPBase* connection);
 	void start();
 private:

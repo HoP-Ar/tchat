@@ -5,7 +5,9 @@
 //          Functional Description Of Classes 
 //
 ///////////////////////////////////////////////////////////////////////////
-boost::mutex cMutex;
+
+//v0.6 boost::mutex cMutex;
+
 //
 //Class TCPBase
 //
@@ -184,6 +186,14 @@ bool Client::start(){
 ///////////////////////////////////////////////////////////////////////////////////
 
 //
+//void* run_ClientListener_thread(void*)
+//
+
+void* run_ClientListener_thread(void* object){
+	((ClientListener*) object)->start();
+}
+
+//
 //class ClientListener
 //
 
@@ -206,7 +216,7 @@ bool ClientListener::start(){
 	wasConnected = true;
 //	test(connSocFD);
 //	send("hello");
-	std::cout<<"[]<- One more client has been connected to "<<port<<" port."<<std::endl;
+	std::cout<<"\e[1;32m[]<-\e[0m One more client has been connected to "<<port<<" port."<<std::endl;
 	while(isConnected()){
 		receive();
 	}
@@ -258,12 +268,22 @@ int ClientListener::getID(){
 
 void ClientListener::receive(){
 	std::string msg = breceive();
-	if(msg != "/exit")
-		for(int i = 0; i < friends->size(); i++)
+	if(msg != "/exit"){
+		for(int i = 0; i < friends->size(); i++){	// problem on friends->size()
 			if(getID() != (*friends)[i].getID()){
 				//test((*friends)[i].getID());
 				(*friends)[i].send(msg);
 			}
+		}
+	}
+}
+
+//
+//void* zombieKiller_thread(void*)
+//
+
+void* zombieKiller_thread(void* object){
+	((ClientGroup*) object)->zombieThreadCollector();
 }
 
 //
@@ -273,21 +293,23 @@ void ClientListener::receive(){
 ClientGroup::ClientGroup(std::string groupType){
 	type = groupType;
 //	boost::thread garbCThread;
-//	garbCThread = boost::thread(&ClientGroup::garbageCollector, this);    // needs to reference of this
+//	garbCThread = boost::thread(&ClientGroup::zombieThreadCollector, this);    // needs to reference of this
 }
 
-void ClientGroup::garbageCollector(){
+void ClientGroup::zombieThreadCollector(){
 	while(1){
 		sleep(1);
 //		test(clients.size());
 		for(int i = 0; i < clients.size(); i++){
-//			test(clients[i].isConnected());
+//	 		test(clients[i].isConnected());
 			if(clients[i].disconnected()){
-				boost::mutex::scoped_lock lockClients(cMutex);
+				//v0.6 boost::mutex::scoped_lock lockClients(cMutex);
+				pthread_mutex_lock(&cMutex);
 				int disPort = clients[i].getPort();
 				clients.erase(clients.begin() + i);
 				i--;
-				std::cout<<"[]-> One client has been disconnected from "<<disPort<<" port."<<std::endl;
+				pthread_mutex_unlock(&cMutex);
+				std::cout<<"\e[1;31m[]->\e[0m One client has been disconnected from "<<disPort<<" port."<<std::endl;
 			}
 		}
 
@@ -303,7 +325,8 @@ std::string ClientGroup::getType(){
 }
 
 std::string ClientGroup::creatSlot(){
-	boost::thread newThread;
+	//v0.6 boost::thread newThread;
+	pthread_t newThread;
 	int newID;
 	if(clients.size() != 0){
 		newID = clients.back().getID() + 1;
@@ -315,13 +338,22 @@ std::string ClientGroup::creatSlot(){
 	clients.push_back(newOne);
 //	clients.back().setFriendList(&clients);
 	clients.back().setup();
-	newThread = boost::thread(boost::bind(&ClientListener::start, &clients.back()));
+	//v0.6 newThread = boost::thread(boost::bind(&ClientListener::start, &clients.back()));
+	pthread_create(&newThread, NULL, &run_ClientListener_thread, &clients.back());
 	std::ostringstream newPort;
 	newPort<<clients.back().getPort();
 	return newPort.str();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
+
+//
+//void* Server_takeClient_thread(void*)
+//
+
+void* Server_takeClient_thread(void* object){
+	((Server*) object)->takeClient();
+}
 
 //
 //class Server
@@ -342,12 +374,13 @@ Server::Server(int maxClients) : TCPServer(NULL) {
 bool Server::start(){
 	setup();
 	if(!create()) return false;
-	threadForClientReceive = boost::thread(boost::bind(&Server::takeClient, this));
+	//v0.6 threadForClientReceive = boost::thread(boost::bind(&Server::takeClient, this));
+	pthread_create(&threadForClientReceiving, NULL, &Server_takeClient_thread, this);
 	return true;
 }
 
 void Server::wait_to_end(){
-	threadForClientReceive.join();
+	pthread_join(threadForClientReceiving, NULL);
 }
 
 void Server::takeClient(){
@@ -395,8 +428,10 @@ void Server::takeClient(){
 			ClientGroup newOne(clientType);
 			groups.push_back(newOne);
 			clientGroup = &groups[groups.size() - 1];
-			boost::thread garbCThread;
-			garbCThread = boost::thread(boost::bind(&ClientGroup::garbageCollector, clientGroup));
+			//v0.6 boost::thread garbCThread;
+			pthread_t zombieCThread;
+			//v0.6 garbCThread = boost::thread(boost::bind(&ClientGroup::zombieThreadCollector, clientGroup));
+			pthread_create(&zombieCThread, NULL, &zombieKiller_thread, &clientGroup);
 		}
 		msg = clientGroup->creatSlot();
 		//test("rM = " + msg);

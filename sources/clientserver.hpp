@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////
-//clientserver
+//clientserver 0.7
 ////////////////////////////////////////////////////////////////
 
 #ifndef CLIENTSERVER_HPP
@@ -20,8 +20,9 @@
 #include <arpa/inet.h>
 //-----
 //-----
-#include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <pthread.h>
+//#include <boost/thread/thread.hpp>
+//#include <boost/thread/mutex.hpp>
 //-----
 
 //---Final products:
@@ -56,10 +57,19 @@
 	  // stop()
 	  // wait_to_end()
 	  
-//////////////////////////////////////////////////////		
+//////////////////////////////////////////////////////
+// in v2.0 will be added new features:
+// on Server class:
+	  // kick(string clientID)
+	  // closeGroup(string groupType)
+	  // getListClientID();
+	  // shutDown()
+	  // receiveClient(bool receiverState)
+//////////////////////////////////////////////////////
 
 //Globals
 //boost::mutex cMutex;
+static pthread_mutex_t cMutex;
 /////////
 
 //Other components
@@ -135,9 +145,12 @@ protected:
 	int connectionPort;
 };
 
+void* run_ClientListener_thread(void* object);
+
 class ClientListener : protected TCPServer{
 public:
 	friend class ClientGroup;
+	friend void* run_ClientListener_thread(void* object);
 protected:
 	int id;
 	int wasConnected;
@@ -158,9 +171,12 @@ protected:
 	void receive();
 };
 
+void* zombieKiller_thread(void* object);
+
 class ClientGroup{
 public:
 	friend class Server;
+	friend void* zombieKiller_thread(void* object);
 protected:
 	std::string type;
 	std::vector<ClientListener> clients;
@@ -180,13 +196,17 @@ protected:
 	
 	ClientGroup(std::string groupType);
 	int getCount();
-	void garbageCollector();
+	void zombieThreadCollector();
 	std::string getType();
 	std::string creatSlot();
 };
 
+void* Server_takeClient_thread(void* object);
+
 class Server : protected TCPServer {
 public:
+	friend void* Server_takeClient_thread(void* object);
+
 	Server(std::string serverType, int maxClients);
 	Server(std::string serverType);
 	Server(int maxClients);
@@ -196,7 +216,8 @@ public:
 protected:
 	int slots;
 	std::vector<ClientGroup> groups;
-	boost::thread threadForClientReceive;
+	//v0.6 boost::thread threadForClientReceive;
+	pthread_t threadForClientReceiving;
 	
 	void takeClient();
 };
