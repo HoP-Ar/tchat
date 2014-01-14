@@ -1,10 +1,9 @@
-
-CC ?= g++
+CXX ?= g++
 OPT ?= -Wall -g
 sources ?= sources/
 results ?= results/
 LIBBOOST ?= -lboost_thread-mt -lboost_system-mt
-CFLAG ?= -lpthread
+CXXFLAG ?= -lpthread
 install_dir ?= ~/execs/
 
 default: tchat
@@ -12,14 +11,14 @@ default: tchat
 compile:
 	@echo -en "Compiling...\r"
 clientserver.o: $(sources)clientserver.cpp $(sources)clientserver.hpp
-	@$(CC) $(OPT) -c $(sources)clientserver.cpp
+	@$(CXX) $(OPT) -c $(sources)clientserver.cpp
 chat.o: $(sources)chat.cpp $(sources)chat.hpp $(sources)clientserver.hpp
-	@$(CC) $(OPT) -c $(sources)chat.cpp
+	@$(CXX) $(OPT) -c $(sources)chat.cpp
 main.o: $(sources)main.cpp $(sources)chat.hpp
-	@$(CC) $(OPT) -c $(sources)main.cpp
+	@$(CXX) $(OPT) -c $(sources)main.cpp
 tchat: compile clientserver.o chat.o main.o
 	@echo -en "Compiling tchat\r"
-	@$(CC) $(OPT) clientserver.o chat.o main.o -o tchat $(CFLAG)
+	@$(CXX) $(OPT) clientserver.o chat.o main.o -o tchat $(CXXFLAG)
 	@echo "Success.                                               "
 	@mkdir -p $(results)
 	@cp tchat $(results)
