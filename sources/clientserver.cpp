@@ -73,7 +73,7 @@ std::string TCPBase::receive(){
 }
 
 void TCPBase::clearBuff(){
-	for(int i = 0; i < sizeof(messg); i++)
+	for(int i = 0; i < int(sizeof(messg)); i++)
 		messg[i] = 0;
 }
 
@@ -191,6 +191,7 @@ bool Client::start(){
 
 void* run_ClientListener_thread(void* object){
 	((ClientListener*) object)->start();
+	return 0;
 }
 
 //
@@ -269,7 +270,7 @@ int ClientListener::getID(){
 void ClientListener::receive(){
 	std::string msg = breceive();
 	if(msg != "/exit"){
-		for(int i = 0; i < friends->size(); i++){	// problem on friends->size()
+		for(int i = 0; i < int(friends->size()); i++){	// problem on friends->size()
 			if(getID() != (*friends)[i].getID()){
 				//test((*friends)[i].getID());
 				(*friends)[i].send(msg);
@@ -284,6 +285,7 @@ void ClientListener::receive(){
 
 void* zombieKiller_thread(void* object){
 	((ClientGroup*) object)->zombieThreadCollector();
+	return 0;
 }
 
 //
@@ -300,7 +302,7 @@ void ClientGroup::zombieThreadCollector(){
 	while(1){
 		sleep(1);
 //		test(clients.size());
-		for(int i = 0; i < clients.size(); i++){
+		for(int i = 0; i < int(clients.size()); i++){
 //	 		test(clients[i].isConnected());
 			if(clients[i].disconnected()){
 				//v0.6 boost::mutex::scoped_lock lockClients(cMutex);
@@ -353,6 +355,7 @@ std::string ClientGroup::creatSlot(){
 
 void* Server_takeClient_thread(void* object){
 	((Server*) object)->takeClient();
+	return 0;
 }
 
 //
@@ -393,7 +396,7 @@ void Server::takeClient(){
 		connSocFD = accept(socFD, (sockaddr*) &addr, &some);
 		// receiving
 		int mn = 0;
-		for(int i = 0; i < groups.size(); i++){
+		for(int i = 0; i < int(groups.size()); i++){
 			if(groups[i].getCount() != 0)
 				mn += groups[i].getCount();
 			else{
@@ -417,7 +420,7 @@ void Server::takeClient(){
 			continue;
 		}
 		notAssigned = true;
-		for(int i = 0; i < groups.size(); i++){
+		for(int i = 0; i < int(groups.size()); i++){
 			if(clientType == groups[i].getType()){
 				clientGroup = &groups[i];
 				notAssigned = false;
