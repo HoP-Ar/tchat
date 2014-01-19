@@ -69,7 +69,7 @@
 
 //Globals
 //boost::mutex cMutex;
-static pthread_mutex_t cMutex;
+//static pthread_mutex_t cMutex = PTHREAD_MUTEX_INITIALIZER;
 /////////
 
 //Other components
@@ -180,6 +180,7 @@ public:
 protected:
 	std::string type;
 	std::vector<ClientListener> clients;
+	pthread_mutex_t cMutex;
 //	boost::mutex cMutex;
 //	std::vector<volatile ClientListener> clients;
 	
@@ -214,6 +215,7 @@ public:
 	void wait_to_end();
 	~Server();
 protected:
+	pthread_mutex_t mutex;
 	int slots;
 	std::vector<ClientGroup> groups;
 	//v0.6 boost::thread threadForClientReceive;

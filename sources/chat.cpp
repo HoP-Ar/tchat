@@ -14,6 +14,7 @@ static std::string version = "";
 
 void* chat_listen_thread(void* null){
 	((Chat*) null)->listen();
+	return 0;
 }
 
 Chat::Chat(TCPBase* connection){
@@ -64,7 +65,7 @@ Opts::Opts(int argc_a, char** argv_a){
 	}
 	if(correct) {
 		correct = false;
-		for(int i = 0; i < opt_groups[argc - 1].size(); i++){
+		for(int i = 0; i < int(opt_groups[argc - 1].size()); i++){
 			if (argv[1] == "-" + opt_groups[argc - 1][i]){
 				// test(opt_groups[argc - 1][i]);
 				opt_nm = (int) opts[opt_groups[argc - 1][i]]/10;

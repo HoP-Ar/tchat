@@ -7,7 +7,6 @@
 ///////////////////////////////////////////////////////////////////////////
 
 //v0.6 boost::mutex cMutex;
-
 //
 //Class TCPBase
 //
@@ -225,10 +224,12 @@ bool ClientListener::start(){
 }
 
 bool ClientListener::disconnected(){
+	bool state;
 	if(wasConnected)
-		return !isConnected();
+		state = !isConnected();
 	else
-		return false;
+		state = false;
+	return state;
 		
 }
 
@@ -302,18 +303,18 @@ void ClientGroup::zombieThreadCollector(){
 	while(1){
 		sleep(1);
 //		test(clients.size());
+		pthread_mutex_lock(&cMutex);
 		for(int i = 0; i < int(clients.size()); i++){
 //	 		test(clients[i].isConnected());
 			if(clients[i].disconnected()){
 				//v0.6 boost::mutex::scoped_lock lockClients(cMutex);
-				pthread_mutex_lock(&cMutex);
 				int disPort = clients[i].getPort();
 				clients.erase(clients.begin() + i);
 				i--;
-				pthread_mutex_unlock(&cMutex);
 				std::cout<<"\e[1;31m[]->\e[0m One client has been disconnected from "<<disPort<<" port."<<std::endl;
 			}
 		}
+		pthread_mutex_unlock(&cMutex);
 
 	}
 }
@@ -396,6 +397,7 @@ void Server::takeClient(){
 		connSocFD = accept(socFD, (sockaddr*) &addr, &some);
 		// receiving
 		int mn = 0;
+		pthread_mutex_lock(&mutex);
 		for(int i = 0; i < int(groups.size()); i++){
 			if(groups[i].getCount() != 0)
 				mn += groups[i].getCount();
@@ -404,6 +406,7 @@ void Server::takeClient(){
 				i--;
 			}
 		}
+		pthread_mutex_unlock(&mutex);
 		// step 1 >>
 		if(mn >= slots){
 			send("Sorry. Server is full, please try later.");
@@ -420,6 +423,7 @@ void Server::takeClient(){
 			continue;
 		}
 		notAssigned = true;
+		pthread_mutex_lock(&mutex);
 		for(int i = 0; i < int(groups.size()); i++){
 			if(clientType == groups[i].getType()){
 				clientGroup = &groups[i];
@@ -436,8 +440,8 @@ void Server::takeClient(){
 			//v0.6 garbCThread = boost::thread(boost::bind(&ClientGroup::zombieThreadCollector, clientGroup));
 			pthread_create(&zombieCThread, NULL, &zombieKiller_thread, &clientGroup);
 		}
+		pthread_mutex_unlock(&mutex);
 		msg = clientGroup->creatSlot();
-		//test("rM = " + msg);
 		send(msg);
 		//close(connSocFD);					// maybe need
 		// received
